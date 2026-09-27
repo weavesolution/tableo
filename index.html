@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mood Wala Food — Order Online</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0d0d0d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mood Wala">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --black:#0d0d0d;
+    --panel:#171717;
+    --yellow:#ffc400;
+    --yellow-deep:#e6a800;
+    --white:#f6f6f2;
+    --muted:#9a9a94;
+    --red:#e3392e;
+    --line:#2a2a26;
+    --nav-bg:rgba(13,13,13,0.97);
+    --radius:14px;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  /* --black = page background, --white = primary text color (names are historical,
+     they still just mean "background" / "text" once the light theme flips them) */
+  :root[data-theme="light"]{
+    --black:#f7f5ef;
+    --panel:#ffffff;
+    --white:#1a1a17;
+    --muted:#75726a;
+    --line:#e4e0d3;
+    --yellow-deep:#c98f00;
+    --nav-bg:rgba(247,245,239,0.97);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-padding-top:120px;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--black);
+    color:var(--white);
+    font-family:"Work Sans",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,.display{font-family:"Anton",sans-serif;font-weight:400;letter-spacing:0.3px;}
+
+  /* ---------- Header ---------- */
+  header{
+    padding:22px 18px 14px;
+    text-align:center;
+    border-bottom:2px solid var(--yellow);
+    position:relative;
+    background:radial-gradient(120% 140% at 50% -20%, var(--panel) 0%, var(--black) 60%);
+  }
+  .logo-ring{
+    width:78px;height:78px;border-radius:50%;
+    border:3px solid var(--yellow);
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 8px;
+    font-size:30px;
+    background:var(--panel);
+  }
+  #theme-toggle{
+    position:absolute;top:14px;right:14px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--white);
+    width:38px;height:38px;
+    border-radius:50%;
+    font-size:17px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  header h1{
+    color:var(--yellow);
+    font-size:clamp(26px,7vw,34px);
+    margin:0;
+    line-height:1;
+  }
+  header p{
+    margin:6px 0 0;
+    color:var(--muted);
+    font-size:13px;
+  }
+  .tagline{
+    margin-top:10px;
+    font-size:12px;
+    color:var(--white);
+    background:var(--panel);
+    display:inline-block;
+    padding:6px 12px;
+    border-radius:20px;
+    border:1px solid var(--line);
+  }
+
+  /* ---------- Category nav ---------- */
+  nav.catbar{
+    position:sticky;top:0;z-index:20;
+    background:var(--nav-bg);
+    backdrop-filter:blur(6px);
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding:10px 14px;
+    border-bottom:1px solid var(--line);
+    scrollbar-width:none;
+  }
+  nav.catbar::-webkit-scrollbar{display:none;}
+  nav.catbar button{
+    flex:0 0 auto;
+    background:var(--panel);
+    color:var(--white);
+    border:1px solid var(--line);
+    padding:8px 14px;
+    border-radius:20px;
+    font-size:13px;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  nav.catbar button.active{
+    background:var(--yellow);
+    color:#161200;
+    border-color:var(--yellow);
+  }
+
+  /* ---------- Main ---------- */
+  main{padding:8px 14px 140px;max-width:640px;margin:0 auto;}
+  section.category{padding-top:22px;scroll-margin-top:120px;}
+  .cat-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:2px;
+  }
+  .cat-head h2{
+    font-size:22px;
+    color:var(--yellow);
+    margin:0;
+  }
+  .cat-note{
+    font-size:11.5px;
+    color:var(--red);
+    font-weight:700;
+    margin:2px 0 10px;
+  }
+
+  .item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:12px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .item-info{flex:1;min-width:0;}
+  .item-name{font-size:15.5px;font-weight:600;color:var(--white);}
+  .item-price{font-size:13.5px;color:var(--yellow-deep);margin-top:2px;font-weight:700;}
+  .item-tag{
+    display:inline-block;
+    font-size:10px;
+    color:var(--red);
+    border:1px solid var(--red);
+    border-radius:6px;
+    padding:1px 5px;
+    margin-left:6px;
+    vertical-align:middle;
+  }
+
+  .item-action{flex:0 0 auto;}
+  .add-btn{
+    background:var(--yellow);
+    color:#161200;
+    border:none;
+    font-weight:800;
+    font-size:13px;
+    padding:9px 16px;
+    border-radius:10px;
+    min-width:76px;
+  }
+  .stepper{
+    display:flex;
+    align-items:center;
+    background:var(--yellow);
+    border-radius:10px;
+    overflow:hidden;
+    min-width:88px;
+  }
+  .stepper button{
+    background:transparent;
+    border:none;
+    color:#161200;
+    font-size:18px;
+    font-weight:800;
+    width:32px;height:36px;
+  }
+  .stepper span{
+    flex:1;
+    text-align:center;
+    font-weight:800;
+    color:#161200;
+    font-size:14px;
+  }
+
+  /* ---------- Add-on chip ---------- */
+  .addon-row{
+    margin-top:4px;
+  }
+  .addon-chip{
+    font-size:11px;
+    color:var(--white);
+    background:var(--panel);
+    border:1px dashed var(--yellow-deep);
+    padding:4px 8px;
+    border-radius:8px;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .addon-chip input{accent-color:var(--yellow);}
+
+  /* ---------- Floating cart bar ---------- */
+  #cart-bar{
+    position:fixed;
+    left:14px;right:14px;
+    bottom:calc(14px + env(safe-area-inset-bottom,0px));
+    background:var(--yellow);
+    color:#161200;
+    border-radius:16px;
+    padding:14px 18px;
+    display:none;
+    align-items:center;
+    justify-content:space-between;
+    box-shadow:0 8px 24px rgba(0,0,0,0.45);
+    z-index:30;
+    max-width:612px;
+    margin:0 auto;
+  }
+  #cart-bar.show{display:flex;}
+  #cart-bar .cb-left{font-weight:800;font-size:14px;}
+  #cart-bar .cb-left small{display:block;font-weight:600;font-size:11.5px;opacity:0.75;}
+  #cart-bar .cb-right{
+    background:#161200;color:var(--yellow);
+    padding:9px 16px;border-radius:10px;font-weight:800;font-size:13.5px;
+  }
+
+  /* ---------- Cart drawer ---------- */
+  #overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,0.6);
+    display:none;z-index:40;
+  }
+  #overlay.show{display:block;}
+  #drawer{
+    position:fixed;left:0;right:0;bottom:0;
+    max-height:88vh;
+    background:var(--black);
+    border-top:2px solid var(--yellow);
+    border-radius:20px 20px 0 0;
+    z-index:50;
+    transform:translateY(110%);
+    transition:transform .28s ease;
+    display:flex;flex-direction:column;
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  #drawer.show{transform:translateY(0);}
+  .drawer-handle{
+    width:40px;height:4px;background:var(--line);
+    border-radius:4px;margin:10px auto 4px;
+  }
+  .drawer-head{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:8px 18px 10px;border-bottom:1px solid var(--line);
+  }
+  .drawer-head h3{margin:0;color:var(--yellow);font-size:20px;}
+  .drawer-head button{background:none;border:none;color:var(--muted);font-size:22px;}
+  #cart-items{overflow-y:auto;padding:6px 18px;flex:1;}
+  .cart-line{
+    display:flex;justify-content:space-between;align-items:flex-start;
+    padding:10px 0;border-bottom:1px solid var(--line);gap:10px;
+  }
+  .cart-line .cl-name{font-size:14px;font-weight:600;}
+  .cart-line .cl-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+  .cart-line .cl-price{font-size:13px;color:var(--yellow-deep);font-weight:700;white-space:nowrap;margin-top:2px;}
+  .cl-note{
+    width:100%;margin-top:6px;
+    background:var(--panel);border:1px solid var(--line);color:var(--white);
+    font-size:12.5px;padding:7px 10px;border-radius:8px;
+  }
+  .cl-note::placeholder{color:var(--muted);}
+  .empty-cart{color:var(--muted);text-align:center;padding:40px 10px;font-size:14px;}
+
+  .checkout-form{padding:12px 18px 4px;border-top:1px solid var(--line);}
+  .checkout-form label{
+    display:block;font-size:11.5px;color:var(--muted);
+    margin:10px 0 4px;text-transform:uppercase;letter-spacing:.4px;
+  }
+  .checkout-form input{
+    width:100%;
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--white);
+    padding:11px 12px;
+    border-radius:10px;
+    font-size:15px;
+  }
+  .checkout-form input:focus{outline:2px solid var(--yellow);border-color:var(--yellow);}
+  .table-row{display:flex;gap:10px;}
+  .table-row > div{flex:1;}
+
+  .total-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:14px 18px 4px;font-weight:800;font-size:16px;
+  }
+  .total-row span:last-child{color:var(--yellow);}
+
+  #place-order{
+    margin:14px 18px 16px;
+    background:var(--yellow);
+    color:#161200;
+    border:none;
+    padding:15px;
+    width:calc(100% - 36px);
+    border-radius:12px;
+    font-weight:800;
+    font-size:15.5px;
+  }
+  #place-order:disabled{opacity:0.5;}
+
+  .field-error{color:var(--red);font-size:11.5px;margin-top:4px;display:none;}
+  .field-error.show{display:block;}
+
+  /* ---------- Confirmation ---------- */
+  #confirm-screen{
+    position:fixed;inset:0;background:var(--black);
+    z-index:60;display:none;
+    flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:30px;
+  }
+  #confirm-screen.show{display:flex;}
+  #confirm-screen .tick{
+    width:74px;height:74px;border-radius:50%;
+    border:3px solid var(--yellow);color:var(--yellow);
+    font-size:36px;display:flex;align-items:center;justify-content:center;
+    margin-bottom:18px;
+  }
+  #confirm-screen h2{color:var(--yellow);margin:0 0 8px;font-size:24px;}
+  #confirm-screen p{color:var(--muted);font-size:14px;max-width:280px;margin:0 0 22px;}
+  #confirm-screen button{
+    background:var(--yellow);color:#161200;border:none;
+    padding:12px 24px;border-radius:10px;font-weight:800;font-size:14px;
+  }
+
+  .toast{
+    position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);
+    background:var(--panel);border:1px solid var(--line);color:var(--white);
+    padding:10px 18px;border-radius:10px;font-size:13px;opacity:0;max-width:90vw;text-align:center;
+    transition:.25s;z-index:70;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,0.35);
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .order-error{color:var(--red);font-size:12.5px;text-align:center;margin:0 18px;display:none;}
+  .order-error.show{display:block;}
+
+
+  /* ---------- Install-app floating button ---------- */
+  #install-fab{
+    position:fixed;right:14px;bottom:calc(16px + env(safe-area-inset-bottom,0px));
+    z-index:35;display:none;align-items:center;
+    background:var(--yellow);color:#161200;border-radius:24px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.45);transition:bottom .2s;
+  }
+  #install-fab.show{display:flex;}
+  body.has-cart #install-fab{bottom:calc(92px + env(safe-area-inset-bottom,0px));}
+  #install-fab button{background:none;border:none;color:#161200;font-weight:800;font-family:inherit;}
+  #install-fab .ifab-main{padding:9px 4px 9px 14px;font-size:12.5px;}
+  #install-fab .ifab-x{padding:9px 12px 9px 8px;font-size:15px;opacity:.7;}
+  #ios-help{
+    position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:90;
+    display:none;align-items:flex-end;justify-content:center;
+  }
+  #ios-help.show{display:flex;}
+  #ios-help .box{
+    background:var(--panel);color:var(--white);border-top:2px solid var(--yellow);
+    border-radius:18px 18px 0 0;width:100%;max-width:520px;
+    padding:20px 22px calc(22px + env(safe-area-inset-bottom,0px));font-size:14px;line-height:1.6;
+  }
+  #ios-help h3{margin:0 0 8px;color:var(--yellow);font-size:19px;}
+  #ios-help button{margin-top:14px;background:var(--yellow);color:#161200;border:none;
+    font-weight:800;padding:11px 22px;border-radius:10px;font-size:14px;}
+
+  /* ---------- My Orders button + outbox banner ---------- */
+  #orders-btn{
+    position:absolute;top:14px;left:14px;
+    background:var(--panel);border:1px solid var(--line);color:var(--white);
+    height:38px;border-radius:19px;padding:0 12px;font-size:12.5px;font-weight:700;
+    display:flex;align-items:center;gap:6px;font-family:inherit;
+  }
+  #orders-btn .dot{width:8px;height:8px;border-radius:50%;background:var(--red);display:none;}
+  #orders-btn .dot.show{display:inline-block;}
+  #outbox-banner{
+    display:none;margin:10px 14px 0;padding:10px 14px;border-radius:12px;
+    font-size:12.5px;font-weight:600;line-height:1.4;cursor:pointer;
+    background:#4a3c00;color:var(--yellow);border:1px solid var(--yellow-deep);
+  }
+  #outbox-banner.show{display:block;}
+  #outbox-banner.bad{background:#3d1210;color:#ff8a80;border-color:var(--red);}
+  :root[data-theme="light"] #outbox-banner{background:#fff4cc;color:#6b4d00;}
+  :root[data-theme="light"] #outbox-banner.bad{background:#ffe3e0;color:#9b1c14;}
+
+  /* ---------- My Orders sheet ---------- */
+  #orders-sheet{
+    position:fixed;left:0;right:0;bottom:0;max-height:88vh;
+    background:var(--black);border-top:2px solid var(--yellow);
+    border-radius:20px 20px 0 0;z-index:50;
+    transform:translateY(110%);transition:transform .28s ease;
+    display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  #orders-sheet.show{transform:translateY(0);}
+  #my-orders{overflow-y:auto;padding:8px 16px 16px;flex:1;}
+  .mo-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;}
+  .mo-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;}
+  .mo-when{font-size:12px;color:var(--muted);}
+  .mo-chip{font-size:10.5px;font-weight:800;border-radius:8px;padding:2px 8px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;}
+  .mo-sent{background:#0f3d1c;color:#3fbf5f;}
+  .mo-queued{background:#4a3c00;color:var(--yellow);}
+  .mo-failed{background:#3d1210;color:var(--red);}
+  .mo-lines{font-size:13px;line-height:1.6;}
+  .mo-note{font-size:11.5px;color:var(--muted);margin-left:12px;}
+  .mo-total{display:flex;justify-content:space-between;font-weight:800;margin-top:6px;font-size:14px;}
+  .mo-total span:last-child{color:var(--yellow);}
+  .mo-reason{font-size:12px;color:var(--red);margin-top:6px;}
+  .mo-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+  .mo-actions button{flex:1;min-width:90px;border-radius:9px;padding:8px;font-weight:700;font-size:12.5px;
+    font-family:inherit;background:transparent;color:var(--white);border:1px solid var(--line);}
+  .mo-actions button.primary{background:var(--yellow);color:#161200;border-color:var(--yellow);}
+  .mo-foot{font-size:11px;color:var(--muted);text-align:center;padding:4px 0 8px;}
+  #confirm-screen .btn-row{display:flex;gap:10px;}
+  #confirm-screen button.ghost{background:transparent;color:var(--yellow);border:1px solid var(--yellow);}
+
+  footer{
+    text-align:center;padding:24px 14px 100px;
+    color:var(--muted);font-size:12px;
+  }
+  footer .addr{margin-top:4px;}
+</style>
+</head>
+<body>
+
+<header>
+  <button id="orders-btn" onclick="openMyOrders()" aria-label="My orders">🧾 My Orders<span class="dot" id="orders-dot"></span></button>
+  <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark/light mode">🌙</button>
+  <div class="logo-ring">🍔</div>
+  <h1>MOOD WALA FOOD</h1>
+  <p>Gudhiyari, Bharat Mata Chowk, Service Road, Raipur</p>
+  <div class="tagline">Order here — pay & collect at the counter</div>
+</header>
+
+<div id="outbox-banner" onclick="openMyOrders()"></div>
+
+<nav class="catbar" id="catbar"></nav>
+
+<main id="menu"></main>
+
+<div id="cart-bar" onclick="openDrawer()">
+  <div class="cb-left"><span id="cb-count">0 items</span><small>Tap to view cart</small></div>
+  <div class="cb-right">₹<span id="cb-total">0</span></div>
+</div>
+
+<div id="overlay" onclick="closeSheets()"></div>
+<div id="drawer">
+  <div class="drawer-handle"></div>
+  <div class="drawer-head">
+    <h3>Your Order</h3>
+    <button onclick="closeDrawer()" aria-label="Close">&times;</button>
+  </div>
+  <div id="cart-items"></div>
+
+  <div class="checkout-form">
+    <label for="cust-name">Your name</label>
+    <input id="cust-name" type="text" placeholder="e.g. Rahul Verma" autocomplete="name">
+    <div class="field-error" id="err-name">Please enter your name.</div>
+
+    <label for="cust-phone">Mobile number</label>
+    <input id="cust-phone" type="tel" placeholder="10-digit mobile number" inputmode="numeric" maxlength="10" autocomplete="tel">
+    <div class="field-error" id="err-phone">Enter a valid 10-digit mobile number.</div>
+  </div>
+
+  <div class="total-row"><span>Total</span><span>₹<span id="drawer-total">0</span></span></div>
+  <div class="order-error" id="order-error"></div>
+  <button id="place-order" onclick="placeOrder()">Place Order</button>
+</div>
+
+<div id="confirm-screen">
+  <div class="tick" id="confirm-tick">✓</div>
+  <h2 id="confirm-title">Order placed!</h2>
+  <p id="confirm-text">Please pay & collect your order at the counter. Show your name if asked.</p>
+  <div class="btn-row">
+    <button class="ghost" onclick="closeConfirm(); openMyOrders()">My Orders</button>
+    <button onclick="closeConfirm()">Order more</button>
+  </div>
+</div>
+
+<div id="orders-sheet">
+  <div class="drawer-handle"></div>
+  <div class="drawer-head">
+    <h3>My Orders</h3>
+    <button onclick="closeSheets()" aria-label="Close">&times;</button>
+  </div>
+  <div id="my-orders"></div>
+</div>
+
+<div id="install-fab">
+  <button class="ifab-main" onclick="installApp()">⬇ Install app</button>
+  <button class="ifab-x" onclick="dismissInstall()" aria-label="Hide">×</button>
+</div>
+<div id="ios-help" onclick="if(event.target===this) this.classList.remove('show')">
+  <div class="box">
+    <h3>Install this app</h3>
+    1. Tap the <b>Share</b> button (square with an arrow) in Safari.<br>
+    2. Scroll down and tap <b>Add to Home Screen</b>.<br>
+    3. Tap <b>Add</b>. The app icon will appear on your home screen.
+    <br><button onclick="document.getElementById('ios-help').classList.remove('show')">Got it</button>
+  </div>
+</div>
+
+
+<div class="toast" id="toast"></div>
+
+<footer>
+  Catering, birthday parties, kitty parties & small function orders taken.
+  <div class="addr">Call: 7974828484 · 9303855553 · 9827150773</div>
+</footer>
+
+<script>
+/* ===================== CONFIG ===================== */
+// Paste your deployed Google Apps Script Web App URL here (see README).
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyMG7rBDLh2_kDCCgvlHFdAeVT0ELlrcJ5rVl9oFZxbunOPNW97KClGgQvn9miLcqYI/exec";
+
+/* ===================== MENU DATA ===================== */
+// addon: null | {label, price}
+const MENU = [
+  { cat: "Starters", items: [
+    ["Veg Lolipop",60],["Cheese Veg Lolipop",70],["Special Pasta",80],
+    ["White Sauce Pasta",90],["Hara-Bhara Kabab",70],["Spring Roll",70],
+    ["Chatpata Corn",60],["Nachos Bhel",60]
+  ]},
+  { cat: "French Fries", items: [
+    ["Salted Fries",50],["Peri Peri Fries",60],["Cheese Fries",60],["Peri Peri Cheese Fries",70]
+  ]},
+  { cat: "Maggi", items: [
+    ["Plain Maggi",50],["Peri Peri Maggi (Spicy)",60],["Cheese Maggi",60],
+    ["Veg Maggi",70],["Paneer Maggi",70],["Cheese Corn Maggi",70],
+    ["Cheese Veg Maggi",80],["Schezwan Maggi (Spicy)",80],["Achari Maggi (Spicy)",80]
+  ]},
+  { cat: "Pizza", note: "Extra Cheese +₹30", addon: {label:"Extra Cheese", price:30}, items: [
+    ["Tomato Pizza",90],["Onion Pizza",90],["Capsicum Pizza",90],["Margarita Pizza",100],
+    ["Kulhad Pizza",100],["Cheese Corn Pizza",100],["Cheese Bust Pizza",100],
+    ["Mexican Pizza (Pasta)",100],["Paneer Pizza",110],["Tandoori Paneer Pizza",120],
+    ["Paneer Peri-Peri Pizza",120],["Farm House Pizza",120],["Garden Veg Loaded Pizza",150]
+  ]},
+  { cat: "Soup", items: [ ["Instant Soup (Veg / Manchaw)",50] ]},
+  { cat: "Shakes", note: "With Ice-Cream +₹20", addon: {label:"With Ice-Cream", price:20}, items: [
+    ["Cold Coffee",50],["Thick Cold Coffee",60],["Oreo Shake",60],["Chocolate Shake",60],
+    ["Mango Shake",60],["Butter Scotch",60],["Strawberry Shake",60],["Rasmalai Shake",60],
+    ["Black Current Shake",60],["Blue Berry Shake",60],["Kit Kat Shake",60],["Biscoff Shake",80]
+  ]},
+  { cat: "Shakes – Real Ones", items: [
+    ["Seeta Phal",80],["Chiku",80],["Mango Shake (Real)",80],["Jamun Shot",80],["Guava",80],["Strawberry (Real)",80]
+  ]},
+  { cat: "Mocktail (300ml)", items: [
+    ["Blue Lagoon Mojito",60],["Green Mint Mojito",60],["Lemon Mojito",60]
+  ]},
+  { cat: "Sandwich", items: [
+    ["Fruit Jam Sandwich",50],["Veg Sandwich",50],["Coleslaw Sandwich",60],["Garlic Bread (2pc baked)",60],
+    ["Cheese Veg Sandwich",60],["Potato Sandwich",50],["Potato Cheese Sandwich",60],["Cheese Garlic Sandwich",60],
+    ["Chocolate Sandwich",60],["Peri Peri Cheese Sandwich",60],["Mexican Sandwich",60],["Cheese Corn Sandwich",60],
+    ["Spanish Corn Sandwich",60],["Cheese Bust Sandwich",60],["Paneer Peri Peri Sandwich",70],
+    ["Tandoori Paneer Sandwich",70],["Paneer Makhani Sandwich",70],["Bombay Sandwich",80],["Club Sandwich",100]
+  ]},
+  { cat: "Burger", items: [
+    ["Potato Patty Burger",60],["Cheese Corn Burger",60],["Cheese Veg Burger",60],
+    ["Paneer Burger",70],["Paneer Burger + Patty",80],["Kurkure Burger",100]
+  ]},
+  { cat: "Chinese", items: [
+    ["Manchurian",80],["Potato Chilli",90],["Chowmein",100],["Paneer Chilli",100],["Soya Chilli",100]
+  ]}
+];
+
+/* ===================== STATE ===================== */
+// cart key = "catIndex-itemIndex"
+let cart = {};
+let DISABLED = new Set(); // stable item keys turned off by the management dashboard
+
+function slug(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''); }
+
+// Stable key shared with the management dashboard (survives menu re-ordering,
+// unlike the "catIndex-itemIndex" key used for the cart).
+function itemKey(catName, itemName){ return slug(catName) + '__' + slug(itemName); }
+
+/* ===================== MENU STATUS (on/off from dashboard) =====================
+   Cached on the customer's phone. The menu is drawn instantly from the cache and
+   refreshed in the background at most once a minute. The server re-checks at
+   order time anyway, so a slightly old cache can never let a switched-off item through. */
+const MENU_CACHE_KEY = 'moodwala-menu-status';
+const MENU_TTL_MS = 60000;
+const isConfigured = () => SCRIPT_URL && !SCRIPT_URL.includes('PASTE_YOUR');
+
+function readMenuCache(){
+  try { return JSON.parse(localStorage.getItem(MENU_CACHE_KEY) || 'null'); } catch (e) { return null; }
+}
+function writeMenuCache(disabled){
+  try { localStorage.setItem(MENU_CACHE_KEY, JSON.stringify({ disabled, t: Date.now() })); } catch (e) {}
+}
+
+let menuFetch = null;
+function refreshMenuStatus(force){
+  if (!isConfigured()) return Promise.resolve();
+  const c = readMenuCache();
+  if (!force && c && Date.now() - c.t < MENU_TTL_MS) return Promise.resolve();
+  if (menuFetch) return menuFetch;
+  menuFetch = fetch(SCRIPT_URL + '?action=menuStatus')
+    .then(r => r.json())
+    .then(data => {
+      if (data && Array.isArray(data.disabled)){
+        writeMenuCache(data.disabled);
+        applyDisabled(data.disabled);
+      }
+    })
+    .catch(err => console.warn('Could not refresh menu on/off status.', err))
+    .finally(() => { menuFetch = null; });
+  return menuFetch;
+}
+
+// Apply a new on/off list: re-render only if it actually changed, keep the cart,
+// and drop anything from the cart that was just switched off.
+function applyDisabled(list){
+  const next = new Set(list);
+  if (next.size === DISABLED.size && [...next].every(k => DISABLED.has(k))) return;
+  DISABLED = next;
+  const dropped = [];
+  Object.keys(cart).forEach(k => {
+    if (DISABLED.has(cart[k].skey)){ dropped.push(cart[k].name); delete cart[k]; }
+  });
+  if (menuEl.childElementCount) renderMenu();
+  updateCartBar();
+  if (dropped.length) showToast(`${dropped.join(', ')} ${dropped.length > 1 ? 'are' : 'is'} no longer available and was removed from your cart.`);
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* ===================== RENDER MENU ===================== */
+const menuEl = document.getElementById('menu');
+const catbarEl = document.getElementById('catbar');
+
+function renderMenu(){
+  menuEl.innerHTML = '';
+  catbarEl.innerHTML = '';
+
+  MENU.forEach((cat, ci) => {
+    const visible = cat.items
+      .map((it, ii) => ({ it, ii }))
+      .filter(({ it }) => !DISABLED.has(itemKey(cat.cat, it[0])));
+    if (visible.length === 0) return; // whole category currently off
+
+    const id = 'cat-' + slug(cat.cat);
+    const btn = document.createElement('button');
+    btn.textContent = cat.cat;
+    btn.onclick = () => document.getElementById(id).scrollIntoView({behavior:'smooth'});
+    catbarEl.appendChild(btn);
+
+    const section = document.createElement('section');
+    section.className = 'category';
+    section.id = id;
+    section.innerHTML = `
+      <div class="cat-head"><h2>${cat.cat}</h2></div>
+      ${cat.note ? `<div class="cat-note">${cat.note}</div>` : ''}
+    `;
+    menuEl.appendChild(section); // attach now so getElementById can find rows we add below
+
+    visible.forEach(({ it, ii }) => {
+      const [name, price] = it;
+      const key = `${ci}-${ii}`;
+      const row = document.createElement('div');
+      row.className = 'item';
+      row.innerHTML = `
+        <div class="item-info">
+          <div class="item-name">${name}</div>
+          <div class="item-price">₹${price}</div>
+          ${cat.addon ? `
+            <div class="addon-row">
+              <label class="addon-chip">
+                <input type="checkbox" id="addon-${key}" ${cart[key] && cart[key].addon ? 'checked' : ''} onchange="toggleAddon('${key}')">
+                ${cat.addon.label} +₹${cat.addon.price}
+              </label>
+            </div>` : ''}
+        </div>
+        <div class="item-action" id="action-${key}"></div>
+      `;
+      section.appendChild(row);
+      renderAction(key, name, price, cat.addon);
+    });
+  });
+}
+
+function getAddonChecked(key){
+  const el = document.getElementById('addon-' + key);
+  return el ? el.checked : false;
+}
+
+function renderAction(key, name, basePrice, addonDef){
+  const el = document.getElementById('action-' + key);
+  if (!el) return; // item is currently turned off / not rendered
+  const qty = cart[key] ? cart[key].qty : 0;
+  if (qty === 0){
+    el.innerHTML = `<button class="add-btn" onclick="addItem('${key}', '${name.replace(/'/g,"\\'")}', ${basePrice})">Add</button>`;
+  } else {
+    el.innerHTML = `
+      <div class="stepper">
+        <button onclick="changeQty('${key}', -1)">−</button>
+        <span>${qty}</span>
+        <button onclick="changeQty('${key}', 1)">+</button>
+      </div>`;
+  }
+}
+
+function addItem(key, name, basePrice){
+  const hasAddon = getAddonChecked(key);
+  const [ci] = key.split('-').map(Number);
+  cart[key] = { name, basePrice, addon: null, note: '', qty: 1, skey: itemKey(MENU[ci].cat, name) };
+  applyAddonState(key, name, basePrice);
+  renderAction(key, name, basePrice, null);
+  updateCartBar();
+}
+
+function toggleAddon(key){
+  if (!cart[key]) return; // addon changes only matter once item is in cart
+  const [ci, ii] = key.split('-').map(Number);
+  applyAddonState(key, cart[key].name, cart[key].basePrice);
+  updateCartBar();
+}
+
+function applyAddonState(key, name, basePrice){
+  const [ci] = key.split('-').map(Number);
+  const cat = MENU[ci];
+  if (cat.addon && getAddonChecked(key)){
+    cart[key].addon = { label: cat.addon.label, price: cat.addon.price };
+  } else if (cart[key]) {
+    cart[key].addon = null;
+  }
+}
+
+function changeQty(key, delta){
+  if (!cart[key]) return;
+  cart[key].qty += delta;
+  if (cart[key].qty <= 0){
+    delete cart[key];
+    const el = document.getElementById('addon-' + key);
+    if (el) el.checked = false;
+  }
+  const [ci, ii] = key.split('-').map(Number);
+  const [name, price] = MENU[ci].items[ii];
+  renderAction(key, name, price, MENU[ci].addon);
+  updateCartBar();
+}
+
+function lineTotal(item){
+  return (item.basePrice + (item.addon ? item.addon.price : 0)) * item.qty;
+}
+
+function cartTotals(){
+  let count = 0, total = 0;
+  Object.values(cart).forEach(it => { count += it.qty; total += lineTotal(it); });
+  return { count, total };
+}
+
+function updateCartBar(){
+  const { count, total } = cartTotals();
+  const bar = document.getElementById('cart-bar');
+  document.getElementById('cb-count').textContent = `${count} item${count!==1?'s':''}`;
+  document.getElementById('cb-total').textContent = total;
+  document.getElementById('drawer-total').textContent = total;
+  bar.classList.toggle('show', count > 0);
+  document.body.classList.toggle('has-cart', count > 0);
+  renderCartItems();
+}
+
+function escapeAttr(s){
+  return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+function renderCartItems(){
+  const wrap = document.getElementById('cart-items');
+  const entries = Object.entries(cart);
+  if (entries.length === 0){
+    wrap.innerHTML = `<div class="empty-cart">Your cart is empty.<br>Add items from the menu to get started.</div>`;
+    return;
+  }
+  wrap.innerHTML = entries.map(([key, it]) => `
+    <div class="cart-line">
+      <div style="flex:1;min-width:0;">
+        <div class="cl-name">${it.name} ${it.qty>1?`× ${it.qty}`:''}</div>
+        ${it.addon ? `<div class="cl-sub">+ ${it.addon.label}</div>` : ''}
+        <input class="cl-note" type="text" placeholder="Add a note (e.g. extra spicy, less sweet)"
+               value="${escapeAttr(it.note)}" oninput="updateNote('${key}', this.value)">
+      </div>
+      <div class="cl-price">₹${lineTotal(it)}</div>
+    </div>
+  `).join('');
+}
+
+// Deliberately does NOT re-render the cart or call updateCartBar() — doing so
+// while typing would rebuild the input and steal focus/cursor position.
+function updateNote(key, value){
+  if (cart[key]) cart[key].note = value;
+}
+
+/* ===================== DRAWER ===================== */
+function openDrawer(){
+  document.getElementById('drawer').classList.add('show');
+  document.getElementById('overlay').classList.add('show');
+}
+function closeDrawer(){
+  document.getElementById('drawer').classList.remove('show');
+  document.getElementById('overlay').classList.remove('show');
+}
+function closeSheets(){
+  closeDrawer();
+  document.getElementById('orders-sheet').classList.remove('show');
+}
+
+/* ===================== PLACE ORDER ===================== */
+function validate(){
+  let ok = true;
+  const name = document.getElementById('cust-name').value.trim();
+  const phone = document.getElementById('cust-phone').value.trim();
+  const errName = document.getElementById('err-name');
+  const errPhone = document.getElementById('err-phone');
+
+  if (name.length < 2){ errName.classList.add('show'); ok = false; } else { errName.classList.remove('show'); }
+  if (!/^\d{10}$/.test(phone)){ errPhone.classList.add('show'); ok = false; } else { errPhone.classList.remove('show'); }
+  return ok;
+}
+
+/* ===================== ORDERS: MY ORDERS + OFFLINE OUTBOX =====================
+   Every order is saved on this phone FIRST, then sent. If the network or Google
+   is busy, it stays in the outbox and is re-sent automatically (with back-off)
+   until the sheet confirms it. Each order carries a unique id (cid), so a retry
+   can never create a duplicate row, even if an earlier attempt actually arrived.
+   "My Orders" is read only from this phone — it never reads the sheet. */
+const MY_ORDERS_KEY = 'moodwala-my-orders';
+const PROFILE_KEY = 'moodwala-customer';
+const MY_ORDERS_KEEP = 50;                  // keep the latest 50 orders on the phone
+const SEND_EXPIRY_MS = 30 * 60 * 1000;      // stop auto-sending an order after 30 min
+const RETRY_MAX_MS = 120000;                // back-off: 5s, 10s, 20s, 40s, 80s, then every 2 min
+
+function loadMyOrders(){
+  try { return JSON.parse(localStorage.getItem(MY_ORDERS_KEY) || '[]'); } catch (e) { return []; }
+}
+function saveMyOrders(list){
+  try { localStorage.setItem(MY_ORDERS_KEY, JSON.stringify(list.slice(0, MY_ORDERS_KEEP))); } catch (e) {}
+}
+function updateMyOrder(cid, patch){
+  const list = loadMyOrders();              // always re-read: another tab may have changed it
+  const o = list.find(x => x.cid === cid);
+  if (o){ Object.assign(o, patch); saveMyOrders(list); }
+  return o;
+}
+function removeMyOrder(cid){
+  saveMyOrders(loadMyOrders().filter(x => x.cid !== cid));
+  renderOutboxUI();
+}
+function newCid(){
+  return 'MW' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 8).toUpperCase();
+}
+function escapeHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------- network ---------- */
+function postOnce(body){
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 25000);
+  // Plain form POST = "simple" CORS request (no preflight); Apps Script's reply is readable.
+  return fetch(SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body, signal: ctrl.signal
+  }).then(r => r.json()).finally(() => clearTimeout(timer));
+}
+const isRetryable = res => !res || ['busy', 'network', 'error'].includes(res.result);
+
+// Sends one saved order. quick = the customer is waiting on the button (3 fast tries);
+// otherwise a single background attempt.
+async function sendOrder(cid, quick){
+  let o = loadMyOrders().find(x => x.cid === cid);
+  if (!o) return { result: 'gone' };
+  if (o.status === 'sent') return { result: 'success' };
+
+  const waits = quick ? [0, 1500, 4000] : [0];
+  let res = null;
+  for (let i = 0; i < waits.length; i++){
+    if (waits[i]) await new Promise(r => setTimeout(r, waits[i]));
+    if (navigator.onLine === false){ res = { result: "network" }; break; }
+    const body = new URLSearchParams({
+      cid: o.cid, name: o.name, phone: o.phone, items: o.items,
+      total: String(o.total), keys: o.keys, timestamp: o.timestamp,
+      retry: (o.attempts || 0) > 0 ? '1' : ''
+    }).toString();
+    try { res = await postOnce(body); } catch (e) { res = { result: 'network' }; }
+    o = updateMyOrder(cid, { attempts: (o.attempts || 0) + 1 }) || o;
+    if (!isRetryable(res)) break;
+    if (quick) document.getElementById('place-order').textContent = 'Still trying…';
+  }
+
+  if (res && res.result === 'success'){
+    updateMyOrder(cid, { status: 'sent', sentAt: Date.now(), nextTry: 0, reason: '' });
+  } else if (isRetryable(res)){
+    const n = o.attempts || 1;
+    updateMyOrder(cid, { nextTry: Date.now() + Math.min(RETRY_MAX_MS, 5000 * Math.pow(2, n - 1)) });
+  }
+  return res || { result: 'network' };
+}
+
+/* ---------- outbox loop ---------- */
+let outboxTimer = null, flushing = false;
+
+async function flushOutbox(force){
+  if (flushing || !isConfigured()) return;
+  flushing = true;
+  try {
+    const now = Date.now();
+    const list = loadMyOrders();
+    let changed = false;
+    list.forEach(o => {
+      if (o.status === 'queued' && now - (o.queuedAt || o.createdAt) > SEND_EXPIRY_MS){
+        o.status = 'failed';
+        o.reason = 'Could not reach the shop for 30 minutes. Please order at the counter, or tap Try again.';
+        changed = true;
+      }
+    });
+    if (changed) saveMyOrders(list);
+
+    const due = list
+      .filter(o => o.status === 'queued' && (force || !o.nextTry || o.nextTry <= now))
+      .sort((a, b) => a.createdAt - b.createdAt);   // oldest first, one at a time
+
+    for (const o of due){
+      const res = await sendOrder(o.cid, false);
+      if (res.result === 'success'){
+        showToast('Your order was sent to the shop ✔');
+      } else if (res.result === 'unavailable'){
+        markUnavailable(o.cid, res.keys);
+      } else if (isRetryable(res)){
+        break; // server/network still struggling — wait for the next round
+      }
+    }
+  } finally {
+    flushing = false;
+    renderOutboxUI();
+    scheduleOutbox();
+  }
+}
+
+function scheduleOutbox(){
+  clearTimeout(outboxTimer);
+  const queued = loadMyOrders().filter(o => o.status === 'queued');
+  if (!queued.length) return;
+  const next = Math.min(...queued.map(o => o.nextTry || 0));
+  outboxTimer = setTimeout(() => flushOutbox(), Math.max(3000, next - Date.now()));
+}
+
+function markUnavailable(cid, keys){
+  const o = loadMyOrders().find(x => x.cid === cid);
+  if (!o) return;
+  const names = (o.lines || []).filter(l => (keys || []).includes(l.skey)).map(l => l.name);
+  updateMyOrder(cid, {
+    status: 'failed',
+    reason: 'Not sent — ' + (names.length ? names.join(', ') : 'some items') + ' became unavailable. Tap "Put back in cart" to edit and re-order.'
+  });
+  const merged = [...new Set([...DISABLED, ...(keys || [])])];
+  writeMenuCache(merged);
+  applyDisabled(merged);
+}
+
+window.addEventListener('online', () => flushOutbox(true));
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') flushOutbox(true);
+});
+
+/* ---------- place order ---------- */
+function setOrderError(msg){
+  const el = document.getElementById('order-error');
+  el.textContent = msg || '';
+  el.classList.toggle('show', !!msg);
+}
+
+async function placeOrder(){
+  const { count, total } = cartTotals();
+  if (count === 0) return;
+  if (!validate()) return;
+  if (!isConfigured()){ setOrderError('Ordering is not set up yet.'); return; }
+
+  const btn = document.getElementById('place-order');
+  btn.disabled = true;
+  btn.textContent = 'Placing order...';
+  setOrderError('');
+
+  const name = document.getElementById('cust-name').value.trim();
+  const phone = document.getElementById('cust-phone').value.trim();
+  try { localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, phone })); } catch (e) {}
+
+  const items = Object.values(cart);
+  const order = {
+    cid: newCid(),
+    createdAt: Date.now(),
+    queuedAt: Date.now(),
+    timestamp: new Date().toLocaleString('en-IN'),
+    name, phone, total,
+    items: items.map(it => {
+      const addonTxt = it.addon ? ` (${it.addon.label})` : '';
+      const noteTxt = it.note && it.note.trim() ? ` [Note: ${it.note.trim()}]` : '';
+      return `${it.name}${addonTxt}${noteTxt} x${it.qty} = ₹${lineTotal(it)}`;
+    }).join(' | '),
+    keys: [...new Set(items.map(it => it.skey))].join(','),
+    lines: items.map(it => ({
+      skey: it.skey, name: it.name, qty: it.qty,
+      addon: it.addon ? it.addon.label : null,
+      note: (it.note || '').trim(), amount: lineTotal(it)
+    })),
+    status: 'queued',
+    attempts: 0
+  };
+
+  // 1) save on the phone first — nothing is lost even if the page closes now
+  const list = loadMyOrders();
+  list.unshift(order);
+  saveMyOrders(list);
+
+  // 2) try to send right away
+  const res = await sendOrder(order.cid, true);
+  btn.disabled = false;
+  btn.textContent = 'Place Order';
+
+  if (res.result === 'unavailable'){
+    // keep the cart so the customer can fix it; this attempt is discarded
+    removeMyOrder(order.cid);
+    const merged = [...new Set([...DISABLED, ...(res.keys || [])])];
+    writeMenuCache(merged);
+    applyDisabled(merged);
+    setOrderError('Some items just ran out and were removed. Please check your cart and place the order again.');
+    return;
+  }
+
+  // sent, or safely queued in the outbox — either way the cart has become an order
+  cart = {};
+  renderMenu();
+  updateCartBar();
+  closeSheets();
+  showConfirm(res.result === 'success');
+  renderOutboxUI();
+  scheduleOutbox();
+}
+
+function showConfirm(sent){
+  document.getElementById('confirm-tick').textContent = sent ? '✓' : '⏳';
+  document.getElementById('confirm-title').textContent = sent ? 'Order placed!' : 'Order saved — sending…';
+  document.getElementById('confirm-text').textContent = sent
+    ? 'Please pay & collect your order at the counter. Show your name if asked.'
+    : 'The connection is slow right now. Your order is saved on this phone and will be sent automatically as soon as possible. Keep this page open — you can check it under My Orders.';
+  document.getElementById('confirm-screen').classList.add('show');
+}
+function closeConfirm(){
+  document.getElementById('confirm-screen').classList.remove('show');
+}
+
+/* ---------- My Orders UI ---------- */
+function openMyOrders(){
+  renderMyOrders();
+  closeDrawer();
+  document.getElementById('orders-sheet').classList.add('show');
+  document.getElementById('overlay').classList.add('show');
+}
+
+function renderOutboxUI(){
+  const list = loadMyOrders();
+  const queued = list.filter(o => o.status === 'queued').length;
+  const failed = list.filter(o => o.status === 'failed').length;
+  const banner = document.getElementById('outbox-banner');
+  if (queued){
+    banner.textContent = `⏳ ${queued} order${queued > 1 ? 's' : ''} waiting to be sent — retrying automatically. Keep this page open.`;
+    banner.className = 'show';
+  } else if (failed){
+    banner.textContent = `⚠ ${failed} order${failed > 1 ? 's' : ''} could not be sent. Tap to view.`;
+    banner.className = 'show bad';
+  } else {
+    banner.className = '';
+  }
+  document.getElementById('orders-dot').classList.toggle('show', queued + failed > 0);
+  if (document.getElementById('orders-sheet').classList.contains('show')) renderMyOrders();
+}
+
+function renderMyOrders(){
+  const el = document.getElementById('my-orders');
+  const list = loadMyOrders();
+  if (!list.length){
+    el.innerHTML = '<div class="empty-cart">No orders yet.<br>Orders you place from this phone will appear here.</div>';
+    return;
+  }
+  const chip = { sent: ['mo-sent', 'Sent ✓'], queued: ['mo-queued', 'Waiting to send'], failed: ['mo-failed', 'Not sent'] };
+  el.innerHTML = list.map(o => {
+    const [cls, label] = chip[o.status] || chip.queued;
+    const when = new Date(o.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const lines = (o.lines || []).map(l => `
+      <div>• ${escapeHtml(l.name)}${l.addon ? ' (' + escapeHtml(l.addon) + ')' : ''} × ${l.qty} — ₹${l.amount}</div>
+      ${l.note ? `<div class="mo-note">Note: ${escapeHtml(l.note)}</div>` : ''}`).join('');
+    let actions = '';
+    if (o.status === 'queued'){
+      actions = `<button class="primary" onclick="flushOutbox(true)">Send now</button>`;
+    } else if (o.status === 'failed'){
+      actions = `
+        <button class="primary" onclick="retryOrder('${o.cid}')">Try again</button>
+        <button onclick="restoreToCart('${o.cid}', true)">Put back in cart</button>
+        <button onclick="if(confirm('Remove this order from your list?')) removeMyOrder('${o.cid}'), renderMyOrders()">Remove</button>`;
+    } else {
+      actions = `<button onclick="restoreToCart('${o.cid}', false)">Order again</button>`;
+    }
+    return `
+      <div class="mo-card">
+        <div class="mo-head"><span class="mo-when">${when}</span><span class="mo-chip ${cls}">${label}</span></div>
+        <div class="mo-lines">${lines}</div>
+        <div class="mo-total"><span>Total</span><span>₹${o.total}</span></div>
+        ${o.status === 'failed' && o.reason ? `<div class="mo-reason">${escapeHtml(o.reason)}</div>` : ''}
+        <div class="mo-actions">${actions}</div>
+      </div>`;
+  }).join('') + '<div class="mo-foot">Saved only on this phone.</div>';
+}
+
+function retryOrder(cid){
+  updateMyOrder(cid, { status: 'queued', queuedAt: Date.now(), nextTry: 0, reason: '' });
+  renderOutboxUI();
+  flushOutbox(true);
+}
+
+// Rebuild the cart from a saved order (current prices; switched-off items skipped).
+function restoreToCart(cid, removeAfter){
+  const o = loadMyOrders().find(x => x.cid === cid);
+  if (!o) return;
+  const skipped = [];
+  (o.lines || []).forEach(l => {
+    let found = null;
+    MENU.forEach((cat, ci) => cat.items.forEach(([name, price], ii) => {
+      if (itemKey(cat.cat, name) === l.skey) found = { ci, ii, name, price, cat };
+    }));
+    if (!found || DISABLED.has(l.skey)){ skipped.push(l.name); return; }
+    const key = `${found.ci}-${found.ii}`;
+    const addon = l.addon && found.cat.addon ? { label: found.cat.addon.label, price: found.cat.addon.price } : null;
+    if (cart[key]) cart[key].qty += l.qty;
+    else cart[key] = { name: found.name, basePrice: found.price, addon, note: l.note || '', qty: l.qty, skey: l.skey };
+  });
+  if (removeAfter) removeMyOrder(cid);
+  renderMenu();
+  updateCartBar();
+  closeSheets();
+  if (Object.keys(cart).length) openDrawer();
+  if (skipped.length) showToast(`${skipped.join(', ')} ${skipped.length > 1 ? 'are' : 'is'} not available right now.`);
+}
+
+
+/* ===================== THEME ===================== */
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('theme-toggle').textContent = t === 'light' ? '☀️' : '🌙';
+  try { localStorage.setItem('moodwala-theme', t); } catch (e) {}
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+}
+function initTheme(){
+  let saved = 'dark';
+  try { saved = localStorage.getItem('moodwala-theme') || 'dark'; } catch (e) {}
+  applyTheme(saved);
+}
+
+/* ===================== INIT ===================== */
+async function init(){
+  initTheme();
+  try { // prefill name & mobile from this phone's last order
+    const prof = JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null');
+    if (prof){
+      document.getElementById('cust-name').value = prof.name || '';
+      document.getElementById('cust-phone').value = prof.phone || '';
+    }
+  } catch (e) {}
+  const c = readMenuCache();
+  if (c && Array.isArray(c.disabled)){
+    DISABLED = new Set(c.disabled);        // instant paint from cache
+  } else if (isConfigured()){
+    // First visit on this phone: wait briefly for the real list, but never more than 2.5 s.
+    await Promise.race([refreshMenuStatus(true), new Promise(r => setTimeout(r, 2500))]);
+  }
+  renderMenu();
+  updateCartBar();
+  renderOutboxUI();
+  refreshMenuStatus();   // background refresh if the cache is older than a minute
+  flushOutbox(true);     // send anything left over from a previous visit
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') refreshMenuStatus();
+});
+init();
+
+/* ===================== PWA: service worker + install button ===================== */
+if ('serviceWorker' in navigator){
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
+let deferredInstall = null;
+const INSTALL_DISMISS_KEY = 'moodwala-install-dismissed-' + location.pathname.replace(/\W+/g, '');
+const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function installDismissedRecently(){
+  try { return Date.now() - Number(localStorage.getItem(INSTALL_DISMISS_KEY) || 0) < 3 * 86400e3; } catch(e){ return false; }
+}
+function showInstallFab(){
+  if (isStandalone() || installDismissedRecently()) return;
+  document.getElementById('install-fab').classList.add('show');
+}
+function hideInstallFab(){ document.getElementById('install-fab').classList.remove('show'); }
+function dismissInstall(){
+  hideInstallFab();
+  try { localStorage.setItem(INSTALL_DISMISS_KEY, String(Date.now())); } catch(e){}
+}
+async function installApp(){
+  if (deferredInstall){
+    deferredInstall.prompt();
+    const choice = await deferredInstall.userChoice;
+    deferredInstall = null;
+    if (choice.outcome === 'accepted') hideInstallFab();
+  } else if (isIOS){
+    document.getElementById('ios-help').classList.add('show');
+  }
+}
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; showInstallFab(); });
+window.addEventListener('appinstalled', () => { deferredInstall = null; hideInstallFab(); });
+if (isIOS) showInstallFab(); // iOS has no install prompt; the button shows instructions instead
+</script>
+</body>
+</html>

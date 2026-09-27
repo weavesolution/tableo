@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mood Wala Food — Manager Dashboard</title>
+<link rel="manifest" href="admin.webmanifest">
+<meta name="theme-color" content="#0d0d0d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MW Manager">
+<link rel="apple-touch-icon" href="icons/admin-apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --black:#0d0d0d; --panel:#171717; --yellow:#ffc400; --yellow-deep:#e6a800;
+    --white:#f6f6f2; --muted:#9a9a94; --red:#e3392e; --green:#3fbf5f; --line:#2a2a26;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;background:var(--black);color:var(--white);
+    font-family:"Work Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased;
+  }
+  h1,h2,.display{font-family:"Anton",sans-serif;font-weight:400;}
+
+  /* ---------- PIN gate ---------- */
+  #pin-screen{
+    position:fixed;inset:0;background:var(--black);z-index:100;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:24px;text-align:center;
+  }
+  #pin-screen h1{color:var(--yellow);font-size:26px;margin:0 0 6px;}
+  #pin-screen p{color:var(--muted);font-size:13px;margin:0 0 18px;}
+  #pin-screen input{
+    background:var(--panel);border:1px solid var(--line);color:var(--white);
+    font-size:20px;letter-spacing:6px;text-align:center;
+    padding:12px;border-radius:10px;width:180px;margin-bottom:12px;
+  }
+  #pin-screen button{
+    background:var(--yellow);color:#161200;border:none;font-weight:800;
+    padding:12px 26px;border-radius:10px;font-size:14px;
+  }
+  #pin-error{color:var(--red);font-size:12.5px;margin-top:10px;display:none;}
+  #pin-error.show{display:block;}
+
+  /* ---------- Layout ---------- */
+  #app{display:none;min-height:100%;flex-direction:column;}
+  #app.show{display:flex;}
+  header{
+    padding:16px 16px 12px;border-bottom:2px solid var(--yellow);
+    display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;background:var(--black);z-index:10;
+  }
+  header h1{color:var(--yellow);font-size:21px;margin:0;line-height:1.05;letter-spacing:.3px;}
+  header .brand{display:flex;align-items:center;gap:10px;min-width:0;}
+  header .logo-ring{
+    width:40px;height:40px;border-radius:50%;border:2px solid var(--yellow);
+    display:flex;align-items:center;justify-content:center;font-size:18px;
+    background:var(--panel);flex:0 0 auto;
+  }
+  header .sub{color:var(--muted);font-size:11px;margin-top:2px;}
+  #refresh-btn{
+    background:var(--panel);border:1px solid var(--line);color:var(--white);
+    width:38px;height:38px;border-radius:50%;font-size:16px;
+  }
+
+  nav.tabs{
+    display:flex;position:sticky;top:var(--hdr-h,68px);background:var(--black);z-index:9;
+    border-bottom:1px solid var(--line);
+  }
+  nav.tabs button{
+    flex:1;background:none;border:none;color:var(--muted);
+    padding:12px 4px;font-weight:700;font-size:13px;position:relative;
+  }
+  nav.tabs button.active{color:var(--yellow);}
+  nav.tabs button.active::after{
+    content:'';position:absolute;left:16%;right:16%;bottom:0;height:3px;
+    background:var(--yellow);border-radius:3px 3px 0 0;
+  }
+  .badge{
+    display:inline-block;background:var(--red);color:#fff;font-size:10.5px;
+    font-weight:800;border-radius:10px;padding:1px 7px;margin-left:5px;
+    vertical-align:2px;
+  }
+
+  main{flex:1;padding:14px 14px 40px;max-width:680px;margin:0 auto;width:100%;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .empty-state{color:var(--muted);text-align:center;padding:50px 16px;font-size:14px;}
+
+  /* ---------- Order card ---------- */
+  .order-card{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:14px 16px;margin-bottom:12px;
+  }
+  .order-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .order-num{
+    background:var(--yellow);color:#161200;font-weight:800;font-size:12px;
+    border-radius:8px;padding:2px 8px;display:inline-block;margin-bottom:4px;
+  }
+  .order-name{font-size:16px;font-weight:700;}
+  .order-phone{font-size:12.5px;color:var(--yellow-deep);font-weight:600;text-decoration:none;}
+  .order-time{font-size:11px;color:var(--muted);white-space:nowrap;}
+  .order-items{font-size:13px;color:var(--white);opacity:0.9;margin:8px 0;line-height:1.5;}
+  .order-total{font-weight:800;color:var(--yellow);font-size:15px;}
+  .order-actions{display:flex;gap:8px;margin-top:10px;}
+  .order-actions button{
+    flex:1;border:none;border-radius:10px;padding:10px;font-weight:800;font-size:13px;
+  }
+  .btn-done{background:var(--green);color:#06210d;}
+  .btn-reject{background:transparent;color:var(--red);border:1px solid var(--red) !important;}
+  .status-badge{
+    font-size:10.5px;font-weight:800;border-radius:8px;padding:2px 8px;
+    text-transform:uppercase;letter-spacing:.3px;
+  }
+  .status-Pending{background:#4a3c00;color:var(--yellow);}
+  .status-Done{background:#0f3d1c;color:var(--green);}
+  .status-Rejected{background:#3d1210;color:var(--red);}
+
+  /* ---------- History controls ---------- */
+  .history-controls{
+    display:flex;gap:10px;align-items:center;margin-bottom:16px;
+  }
+  .history-controls input[type=date]{
+    flex:1;background:var(--panel);border:1px solid var(--line);color:var(--white);
+    padding:10px 12px;border-radius:10px;font-size:14px;
+  }
+  .history-controls button{
+    background:var(--yellow);color:#161200;border:none;font-weight:800;
+    padding:10px 16px;border-radius:10px;font-size:13px;white-space:nowrap;
+  }
+  .day-total{color:var(--muted);font-size:12.5px;margin:-6px 0 14px;}
+  .resync-row{display:flex;justify-content:space-between;align-items:center;gap:10px;
+    margin-top:18px;color:var(--muted);font-size:11.5px;}
+  .resync-row button{background:none;border:1px solid var(--line);color:var(--muted);
+    border-radius:8px;padding:6px 10px;font-size:11.5px;}
+  header .sub.offline{color:var(--red);}
+
+  /* ---------- History compact list ---------- */
+  .history-row{
+    display:flex;justify-content:space-between;align-items:center;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:12px 14px;margin-bottom:8px;gap:10px;cursor:pointer;
+  }
+  .history-row .hr-left{min-width:0;}
+  .history-row .hr-name{font-size:14.5px;font-weight:700;}
+  .history-row .hr-meta{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  .history-row .hr-right{display:flex;align-items:center;gap:8px;flex:0 0 auto;}
+  .history-row .hr-amount{font-weight:800;color:var(--yellow);font-size:14px;}
+  .history-row .hr-chevron{color:var(--muted);font-size:14px;}
+
+  /* ---------- Order detail modal ---------- */
+  #modal-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:150;
+    display:none;align-items:flex-end;justify-content:center;
+  }
+  #modal-overlay.show{display:flex;}
+  #order-modal{
+    background:var(--black);border-top:2px solid var(--yellow);
+    border-radius:18px 18px 0 0;width:100%;max-width:520px;
+    max-height:85vh;overflow-y:auto;padding:18px 20px calc(20px + env(safe-area-inset-bottom,0px));
+  }
+  #order-modal .modal-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+  #order-modal .modal-head h3{margin:0;color:var(--yellow);font-size:19px;}
+  #order-modal .modal-head button{background:none;border:none;color:var(--muted);font-size:22px;}
+  #order-modal .modal-phone{color:var(--yellow-deep);text-decoration:none;font-weight:600;font-size:13px;}
+  #order-modal .modal-meta{color:var(--muted);font-size:12px;margin-top:2px;}
+  #order-modal .modal-items{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:12px 14px;margin:14px 0;font-size:13.5px;line-height:1.7;
+  }
+  #order-modal .modal-total{display:flex;justify-content:space-between;font-weight:800;font-size:16px;}
+  #order-modal .modal-total span:last-child{color:var(--yellow);}
+
+  /* ---------- Menu tab ---------- */
+  .menu-cat{margin-bottom:20px;}
+  .menu-cat h3{color:var(--yellow);font-size:17px;margin:0 0 6px;}
+  .menu-item-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:10px 0;border-bottom:1px solid var(--line);
+  }
+  .menu-item-row .mi-name{font-size:14px;font-weight:600;}
+  .menu-item-row .mi-price{font-size:12px;color:var(--muted);margin-top:2px;}
+  .switch{
+    position:relative;width:46px;height:26px;flex:0 0 auto;
+  }
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{
+    position:absolute;inset:0;background:var(--line);border-radius:26px;transition:.2s;cursor:pointer;
+  }
+  .slider::before{
+    content:'';position:absolute;width:20px;height:20px;left:3px;top:3px;
+    background:var(--muted);border-radius:50%;transition:.2s;
+  }
+  .switch input:checked + .slider{background:var(--yellow);}
+  .switch input:checked + .slider::before{transform:translateX(20px);background:#161200;}
+  .menu-item-row.off .mi-name, .menu-item-row.off .mi-price{opacity:0.4;}
+
+
+  /* ---------- Install-app floating button ---------- */
+  #install-fab{
+    position:fixed;right:14px;bottom:calc(16px + env(safe-area-inset-bottom,0px));
+    z-index:35;display:none;align-items:center;
+    background:var(--yellow);color:#161200;border-radius:24px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.45);transition:bottom .2s;
+  }
+  #install-fab.show{display:flex;}
+  body.has-cart #install-fab{bottom:calc(92px + env(safe-area-inset-bottom,0px));}
+  #install-fab button{background:none;border:none;color:#161200;font-weight:800;font-family:inherit;}
+  #install-fab .ifab-main{padding:9px 4px 9px 14px;font-size:12.5px;}
+  #install-fab .ifab-x{padding:9px 12px 9px 8px;font-size:15px;opacity:.7;}
+  #ios-help{
+    position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:90;
+    display:none;align-items:flex-end;justify-content:center;
+  }
+  #ios-help.show{display:flex;}
+  #ios-help .box{
+    background:var(--panel);color:var(--white);border-top:2px solid var(--yellow);
+    border-radius:18px 18px 0 0;width:100%;max-width:520px;
+    padding:20px 22px calc(22px + env(safe-area-inset-bottom,0px));font-size:14px;line-height:1.6;
+  }
+  #ios-help h3{margin:0 0 8px;color:var(--yellow);font-size:19px;}
+  #ios-help button{margin-top:14px;background:var(--yellow);color:#161200;border:none;
+    font-weight:800;padding:11px 22px;border-radius:10px;font-size:14px;}
+
+  .toast{
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);
+    background:var(--panel);border:1px solid var(--line);color:var(--white);
+    padding:10px 18px;border-radius:10px;font-size:13px;opacity:0;
+    transition:.25s;z-index:200;pointer-events:none;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div id="pin-screen">
+  <h1>🍔 MOOD WALA FOOD</h1>
+  <p>Manager access — enter PIN</p>
+  <input id="pin-input" type="password" inputmode="numeric" maxlength="6" placeholder="••••">
+  <br>
+  <button onclick="checkPin()">Enter</button>
+  <div id="pin-error">Incorrect PIN, try again.</div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="brand">
+      <div class="logo-ring">🍔</div>
+      <div>
+        <h1>MOOD WALA FOOD</h1>
+        <div class="sub" id="last-updated">Manager Dashboard · Loading…</div>
+      </div>
+    </div>
+    <button id="refresh-btn" onclick="manualRefresh()">⟳</button>
+  </header>
+
+  <nav class="tabs">
+    <button class="active" data-tab="live" onclick="switchTab('live')">Live Orders<span class="badge" id="live-badge" style="display:none;">0</span></button>
+    <button data-tab="history" onclick="switchTab('history')">History</button>
+    <button data-tab="menu" onclick="switchTab('menu')">Menu</button>
+  </nav>
+
+  <main>
+    <section class="panel active" id="panel-live">
+      <div id="live-list"><div class="empty-state">Loading live orders…</div></div>
+    </section>
+
+    <section class="panel" id="panel-history">
+      <div class="history-controls">
+        <input type="date" id="history-date" onchange="loadHistory()">
+        <button onclick="goToday()">Today</button>
+      </div>
+      <div class="day-total" id="history-summary"></div>
+      <div id="history-list"><div class="empty-state">Loading…</div></div>
+      <div class="resync-row">
+        <span id="history-source"></span>
+        <button onclick="fullResync()">Full resync</button>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-menu">
+      <div id="menu-list"><div class="empty-state">Loading menu…</div></div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div id="install-fab">
+  <button class="ifab-main" onclick="installApp()">⬇ Install app</button>
+  <button class="ifab-x" onclick="dismissInstall()" aria-label="Hide">×</button>
+</div>
+<div id="ios-help" onclick="if(event.target===this) this.classList.remove('show')">
+  <div class="box">
+    <h3>Install this app</h3>
+    1. Tap the <b>Share</b> button (square with an arrow) in Safari.<br>
+    2. Scroll down and tap <b>Add to Home Screen</b>.<br>
+    3. Tap <b>Add</b>. The app icon will appear on your home screen.
+    <br><button onclick="document.getElementById('ios-help').classList.remove('show')">Got it</button>
+  </div>
+</div>
+
+
+<div id="modal-overlay" onclick="if(event.target===this) closeOrderModal()">
+  <div id="order-modal">
+    <div class="modal-head">
+      <div>
+        <h3 id="modal-name"></h3>
+        <a class="modal-phone" id="modal-phone" href="tel:"></a>
+        <div class="modal-meta" id="modal-meta"></div>
+      </div>
+      <button onclick="closeOrderModal()" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-items" id="modal-items"></div>
+    <div class="modal-total"><span>Total</span><span id="modal-total"></span></div>
+  </div>
+</div>
+
+<script>
+/* ===================== CONFIG ===================== */
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyMG7rBDLh2_kDCCgvlHFdAeVT0ELlrcJ5rVl9oFZxbunOPNW97KClGgQvn9miLcqYI/exec";
+const ADMIN_PIN = "1234"; // change this before sharing the dashboard link
+
+const SYNC_MS = 15000;            // poll interval while the dashboard is on screen
+const SYNC_MAX_BACKOFF_MS = 60000;
+const KEEP_DAYS = 60;             // orders kept on this device; older days load from the sheet on demand
+const FULL_RESYNC_HOURS = 12;     // self-heal: one full refresh every 12 h
+const MENU_TTL_MS = 60000;
+
+/* ===================== MENU DATA (kept in sync with index.html) ===================== */
+const MENU = [
+  { cat: "Starters", items: [
+    ["Veg Lolipop",60],["Cheese Veg Lolipop",70],["Special Pasta",80],
+    ["White Sauce Pasta",90],["Hara-Bhara Kabab",70],["Spring Roll",70],
+    ["Chatpata Corn",60],["Nachos Bhel",60]
+  ]},
+  { cat: "French Fries", items: [
+    ["Salted Fries",50],["Peri Peri Fries",60],["Cheese Fries",60],["Peri Peri Cheese Fries",70]
+  ]},
+  { cat: "Maggi", items: [
+    ["Plain Maggi",50],["Peri Peri Maggi (Spicy)",60],["Cheese Maggi",60],
+    ["Veg Maggi",70],["Paneer Maggi",70],["Cheese Corn Maggi",70],
+    ["Cheese Veg Maggi",80],["Schezwan Maggi (Spicy)",80],["Achari Maggi (Spicy)",80]
+  ]},
+  { cat: "Pizza", note: "Extra Cheese +₹30", items: [
+    ["Tomato Pizza",90],["Onion Pizza",90],["Capsicum Pizza",90],["Margarita Pizza",100],
+    ["Kulhad Pizza",100],["Cheese Corn Pizza",100],["Cheese Bust Pizza",100],
+    ["Mexican Pizza (Pasta)",100],["Paneer Pizza",110],["Tandoori Paneer Pizza",120],
+    ["Paneer Peri-Peri Pizza",120],["Farm House Pizza",120],["Garden Veg Loaded Pizza",150]
+  ]},
+  { cat: "Soup", items: [ ["Instant Soup (Veg / Manchaw)",50] ]},
+  { cat: "Shakes", note: "With Ice-Cream +₹20", items: [
+    ["Cold Coffee",50],["Thick Cold Coffee",60],["Oreo Shake",60],["Chocolate Shake",60],
+    ["Mango Shake",60],["Butter Scotch",60],["Strawberry Shake",60],["Rasmalai Shake",60],
+    ["Black Current Shake",60],["Blue Berry Shake",60],["Kit Kat Shake",60],["Biscoff Shake",80]
+  ]},
+  { cat: "Shakes – Real Ones", items: [
+    ["Seeta Phal",80],["Chiku",80],["Mango Shake (Real)",80],["Jamun Shot",80],["Guava",80],["Strawberry (Real)",80]
+  ]},
+  { cat: "Mocktail (300ml)", items: [
+    ["Blue Lagoon Mojito",60],["Green Mint Mojito",60],["Lemon Mojito",60]
+  ]},
+  { cat: "Sandwich", items: [
+    ["Fruit Jam Sandwich",50],["Veg Sandwich",50],["Coleslaw Sandwich",60],["Garlic Bread (2pc baked)",60],
+    ["Cheese Veg Sandwich",60],["Potato Sandwich",50],["Potato Cheese Sandwich",60],["Cheese Garlic Sandwich",60],
+    ["Chocolate Sandwich",60],["Peri Peri Cheese Sandwich",60],["Mexican Sandwich",60],["Cheese Corn Sandwich",60],
+    ["Spanish Corn Sandwich",60],["Cheese Bust Sandwich",60],["Paneer Peri Peri Sandwich",70],
+    ["Tandoori Paneer Sandwich",70],["Paneer Makhani Sandwich",70],["Bombay Sandwich",80],["Club Sandwich",100]
+  ]},
+  { cat: "Burger", items: [
+    ["Potato Patty Burger",60],["Cheese Corn Burger",60],["Cheese Veg Burger",60],
+    ["Paneer Burger",70],["Paneer Burger + Patty",80],["Kurkure Burger",100]
+  ]},
+  { cat: "Chinese", items: [
+    ["Manchurian",80],["Potato Chilli",90],["Chowmein",100],["Paneer Chilli",100],["Soya Chilli",100]
+  ]}
+];
+
+function slug(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''); }
+function itemKey(catName, itemName){ return slug(catName) + '__' + slug(itemName); }
+
+/* ===================== PIN GATE ===================== */
+let booted = false;
+function checkPin(){
+  const val = document.getElementById('pin-input').value.trim();
+  if (val === ADMIN_PIN){
+    try { localStorage.setItem('moodwala-admin-ok', '1'); } catch(e){}
+    document.getElementById('pin-screen').style.display = 'none';
+    document.getElementById('app').classList.add('show');
+    boot();
+  } else {
+    document.getElementById('pin-error').classList.add('show');
+  }
+}
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Enter' && document.getElementById('pin-screen').style.display !== 'none') checkPin();
+});
+
+/* ===================== LOCAL STORE (IndexedDB) =====================
+   Every order this device has seen is kept here, so History and Live
+   render instantly with zero calls to Google. Falls back to memory-only
+   if IndexedDB is unavailable (e.g. some private-browsing modes). */
+let dbPromise = null;
+function openDb(){
+  if (dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve, reject) => {
+    if (!window.indexedDB) return reject(new Error('no idb'));
+    const req = indexedDB.open('moodwala-admin', 1);
+    req.onupgradeneeded = () => {
+      const d = req.result;
+      if (!d.objectStoreNames.contains('orders')) d.createObjectStore('orders', { keyPath: 'id' });
+      if (!d.objectStoreNames.contains('kv')) d.createObjectStore('kv');
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return dbPromise;
+}
+function idbLoad(){
+  return openDb().then(d => new Promise((resolve, reject) => {
+    const t = d.transaction(['orders', 'kv']);
+    const o = t.objectStore('orders').getAll();
+    const m = t.objectStore('kv').get('meta');
+    t.oncomplete = () => resolve({ orders: o.result || [], meta: m.result || null });
+    t.onerror = () => reject(t.error);
+  })).catch(() => ({ orders: [], meta: null }));
+}
+function idbSave({ orders = [], remove = [], meta = null, clear = false }){
+  return openDb().then(d => new Promise((resolve, reject) => {
+    const t = d.transaction(['orders', 'kv'], 'readwrite');
+    const s = t.objectStore('orders');
+    if (clear) s.clear();
+    orders.forEach(o => s.put(o));
+    remove.forEach(id => s.delete(id));
+    if (meta) t.objectStore('kv').put(meta, 'meta');
+    t.oncomplete = resolve;
+    t.onerror = () => reject(t.error);
+  })).catch(() => {});
+}
+
+/* ===================== STATE ===================== */
+const S = {
+  orders: new Map(),   // id -> order
+  meta: { row: 0, ver: -1, coveredFrom: '', lastFull: 0 },
+  syncing: false,
+  lastOk: 0,
+  offline: false,
+  fails: 0
+};
+
+/* ===================== HELPERS ===================== */
+function apiGet(params){
+  const qs = new URLSearchParams(params).toString();
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 25000);
+  return fetch(SCRIPT_URL + '?' + qs, { signal: ctrl.signal })
+    .then(r => r.json())
+    .finally(() => clearTimeout(timer));
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove('show'), 2200);
+}
+function escapeHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function localDateStr(d){
+  const tzOff = d.getTimezoneOffset() * 60000;
+  return new Date(d - tzOff).toISOString().slice(0, 10);
+}
+function todayStr(){ return localDateStr(new Date()); }
+function daysAgoStr(n){ const d = new Date(); d.setDate(d.getDate() - n); return localDateStr(d); }
+function nextDayStr(ds){ const d = new Date(ds + 'T12:00:00'); d.setDate(d.getDate() + 1); return localDateStr(d); }
+function byTime(a, b){ return new Date(a.serverTimestamp) - new Date(b.serverTimestamp); }
+function timeOf(o){ return new Date(o.serverTimestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }); }
+
+function setStatusLine(){
+  const el = document.getElementById('last-updated');
+  if (S.offline){
+    el.textContent = 'Manager Dashboard · Offline — saved data' + (S.lastOk ? ' (synced ' + new Date(S.lastOk).toLocaleTimeString('en-IN') + ')' : '');
+    el.classList.add('offline');
+  } else {
+    el.textContent = 'Manager Dashboard · ' + (S.lastOk ? 'Synced ' + new Date(S.lastOk).toLocaleTimeString('en-IN') : 'Loading…');
+    el.classList.remove('offline');
+  }
+}
+
+/* ===================== SYNC =====================
+   Sends the last row + version this device has. If nothing changed the
+   server answers from its cache without touching the sheet. */
+function pruneOld(){
+  const cutoff = daysAgoStr(KEEP_DAYS);
+  const removed = [];
+  S.orders.forEach((o, id) => {
+    if (o.date < cutoff && o.status !== 'Pending'){ S.orders.delete(id); removed.push(id); }
+  });
+  if (!S.meta.coveredFrom || S.meta.coveredFrom < cutoff) S.meta.coveredFrom = cutoff;
+  return removed;
+}
+
+function applyReset(res){
+  S.orders = new Map((res.orders || []).map(o => [o.id, o]));
+  // If the server sent everything from row 2, every date is complete locally.
+  // Otherwise the first date in the window may be partial -> start coverage the day after.
+  let covered = '';
+  if (res.floor > 2 && res.orders.length) covered = nextDayStr(res.orders[0].date);
+  S.meta = { row: res.row, ver: res.ver, coveredFrom: covered, lastFull: Date.now() };
+  pruneOld();
+  idbSave({ clear: true, orders: [...S.orders.values()], meta: S.meta });
+}
+
+function applyDelta(res){
+  const touched = [];
+  (res.orders || []).forEach(o => { S.orders.set(o.id, o); touched.push(o); });
+  (res.changes || []).forEach(c => {
+    const o = S.orders.get(c.id);
+    if (o && o.status !== c.s){ o.status = c.s; touched.push(o); }
+  });
+  S.meta.row = res.row;
+  S.meta.ver = res.ver;
+  const removed = pruneOld();
+  idbSave({ orders: touched, remove: removed, meta: S.meta });
+  return (res.orders || []).length;
+}
+
+async function sync(opts = {}){
+  if (S.syncing) return;
+  S.syncing = true;
+  try {
+    const needFull = opts.full || !S.meta.row || (Date.now() - S.meta.lastFull > FULL_RESYNC_HOURS * 3600e3);
+    const params = { action: 'sync', row: needFull ? 0 : S.meta.row, ver: needFull ? -1 : S.meta.ver };
+    if (opts.full) params.full = '1';
+    const res = await apiGet(params);
+    if (res.result !== 'success') throw new Error(res.message || 'sync failed');
+
+    if (!res.unchanged){
+      const before = pendingCount();
+      if (res.reset) applyReset(res); else applyDelta(res);
+      renderCurrent();
+      if (pendingCount() > before && !res.reset) notifyNewOrder();
+    }
+    S.lastOk = Date.now();
+    S.offline = false;
+    S.fails = 0;
+  } catch (e){
+    S.offline = true;
+    S.fails++;
+  } finally {
+    S.syncing = false;
+    setStatusLine();
+  }
+}
+
+let pollTimer = null;
+function schedulePoll(){
+  clearTimeout(pollTimer);
+  if (document.visibilityState !== 'visible') return; // no polling in background tabs / locked phones
+  const delay = S.fails ? Math.min(SYNC_MAX_BACKOFF_MS, SYNC_MS * Math.pow(2, S.fails - 1)) : SYNC_MS;
+  pollTimer = setTimeout(async () => { await sync(); schedulePoll(); }, delay);
+}
+document.addEventListener('visibilitychange', () => {
+  if (!booted) return;
+  if (document.visibilityState === 'visible'){ sync().then(schedulePoll); }
+  else clearTimeout(pollTimer);
+});
+window.addEventListener('online', () => { if (booted) sync().then(schedulePoll); });
+
+function notifyNewOrder(){
+  try { if (navigator.vibrate) navigator.vibrate(200); } catch(e){}
+  showToast('New order received');
+}
+
+/* ===================== TABS ===================== */
+let currentTab = 'live';
+function switchTab(tab){
+  currentTab = tab;
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  renderCurrent();
+  if (tab === 'menu') loadMenuTab();
+}
+function renderCurrent(){
+  updateBadge();
+  if (currentTab === 'live') renderLive();
+  if (currentTab === 'history') loadHistory();
+}
+
+/* ===================== LIVE ORDERS (from local store) ===================== */
+function pendingOrders(){
+  return [...S.orders.values()].filter(o => o.status === 'Pending').sort(byTime);
+}
+function pendingCount(){ let n = 0; S.orders.forEach(o => { if (o.status === 'Pending') n++; }); return n; }
+function updateBadge(){
+  const n = pendingCount();
+  const badge = document.getElementById('live-badge');
+  badge.style.display = n > 0 ? 'inline-block' : 'none';
+  badge.textContent = n;
+  document.title = (n ? '(' + n + ') ' : '') + 'Mood Wala Food — Manager Dashboard';
+}
+function renderLive(){
+  const el = document.getElementById('live-list');
+  const orders = pendingOrders();
+  if (!orders.length){
+    el.innerHTML = `<div class="empty-state">${S.lastOk || S.meta.row ? 'No live orders right now.' : 'Loading live orders…'}</div>`;
+    return;
+  }
+  el.innerHTML = orders.map((o, i) => {
+    const itemsHtml = String(o.items || '').split(' | ').map(s => `• ${escapeHtml(s)}`).join('<br>');
+    return `
+      <div class="order-card" id="order-${o.id}">
+        <div class="order-top">
+          <div>
+            <span class="order-num">#${i + 1}</span>
+            <div class="order-name">${escapeHtml(o.name)}</div>
+            <a class="order-phone" href="tel:${escapeHtml(o.phone)}">${escapeHtml(o.phone)}</a>
+          </div>
+          <div class="order-time">${timeOf(o)}</div>
+        </div>
+        <div class="order-items">${itemsHtml}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div class="order-total">₹${escapeHtml(o.total)}</div>
+        </div>
+        <div class="order-actions">
+          <button class="btn-done" onclick="setStatus('${o.id}','Done')">Mark Done</button>
+          <button class="btn-reject" onclick="setStatus('${o.id}','Rejected')">Reject</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// Optimistic: the card disappears immediately; reverted if the sheet write fails.
+async function setStatus(orderId, status){
+  const o = S.orders.get(orderId);
+  if (!o) return;
+  const prev = o.status;
+  o.status = status;
+  renderCurrent();
+  try {
+    const res = await apiGet({ action: 'updateStatus', id: orderId, status, row: o.row || '' });
+    if (res.result !== 'success') throw new Error(res.message || 'failed');
+    if (res.row) o.row = res.row;
+    // If nobody else changed anything in between, adopt the new version so the
+    // next poll is a cheap "unchanged". Otherwise the next poll fetches the gap.
+    if (res.ver === S.meta.ver + 1) S.meta.ver = res.ver;
+    idbSave({ orders: [o], meta: S.meta });
+    showToast(status === 'Done' ? 'Order marked done ✔' : 'Order rejected');
+  } catch (e){
+    o.status = prev;
+    renderCurrent();
+    showToast('Could not update — please try again.');
+  }
+}
+
+/* ===================== HISTORY (local first, sheet only for old dates) ===================== */
+let historyOrdersCache = [];
+const olderDays = new Map(); // date -> orders fetched from the sheet this session
+let historyReq = 0;
+
+function goToday(){
+  document.getElementById('history-date').value = todayStr();
+  loadHistory();
+}
+
+function loadHistory(){
+  const dateInput = document.getElementById('history-date');
+  if (!dateInput.value) dateInput.value = todayStr();
+  const date = dateInput.value;
+  const src = document.getElementById('history-source');
+
+  if (!S.meta.row && !S.lastOk){
+    document.getElementById('history-list').innerHTML = '<div class="empty-state">Loading…</div>';
+    return;
+  }
+
+  if (!S.meta.coveredFrom || date >= S.meta.coveredFrom){
+    const orders = [...S.orders.values()].filter(o => o.date === date).sort(byTime);
+    showHistory(orders);
+    src.textContent = 'Saved on this device · no sheet usage';
+    return;
+  }
+
+  // Older than what this device keeps -> one request, then memoised for the session.
+  if (olderDays.has(date)){
+    showHistory(olderDays.get(date));
+    src.textContent = 'Loaded from sheet';
+    return;
+  }
+  const reqId = ++historyReq;
+  document.getElementById('history-list').innerHTML = '<div class="empty-state">Loading from sheet…</div>';
+  document.getElementById('history-summary').textContent = '';
+  src.textContent = '';
+  apiGet({ action: 'historyOrders', date }).then(data => {
+    if (reqId !== historyReq) return; // user already picked another date
+    if (data.result && data.result !== 'success') throw new Error(data.message);
+    const orders = (data.orders || []).sort(byTime);
+    olderDays.set(date, orders);
+    showHistory(orders);
+    src.textContent = 'Loaded from sheet';
+  }).catch(() => {
+    if (reqId !== historyReq) return;
+    document.getElementById('history-list').innerHTML = '<div class="empty-state">Could not reach the order sheet.</div>';
+  });
+}
+
+function showHistory(orders){
+  historyOrdersCache = orders;
+  const el = document.getElementById('history-list');
+  if (!orders.length){
+    el.innerHTML = '<div class="empty-state">No orders found for this date.</div>';
+  } else {
+    el.innerHTML = orders.map(o => `
+      <div class="history-row" onclick="showOrderModal('${o.id}')">
+        <div class="hr-left">
+          <div class="hr-name">${escapeHtml(o.name)}</div>
+          <div class="hr-meta">${timeOf(o)} · <span class="status-badge status-${escapeHtml(o.status)}">${escapeHtml(o.status)}</span></div>
+        </div>
+        <div class="hr-right">
+          <div class="hr-amount">₹${escapeHtml(o.total)}</div>
+          <span class="hr-chevron">›</span>
+        </div>
+      </div>`).join('');
+  }
+  const total = orders.filter(o => o.status !== 'Rejected').reduce((s, o) => s + Number(o.total || 0), 0);
+  document.getElementById('history-summary').textContent =
+    orders.length ? `${orders.length} order${orders.length !== 1 ? 's' : ''} · ₹${total} (excl. rejected)` : '';
+}
+
+async function fullResync(){
+  olderDays.clear();
+  showToast('Refreshing everything from the sheet…');
+  await sync({ full: true });
+  renderCurrent();
+}
+
+/* ===================== ORDER DETAIL MODAL ===================== */
+function showOrderModal(orderId){
+  const o = historyOrdersCache.find(x => x.id === orderId);
+  if (!o) return;
+  const time = new Date(o.serverTimestamp).toLocaleString('en-IN', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+  document.getElementById('modal-name').textContent = o.name;
+  const phoneEl = document.getElementById('modal-phone');
+  phoneEl.textContent = o.phone;
+  phoneEl.href = 'tel:' + o.phone;
+  document.getElementById('modal-meta').innerHTML = `${time} · <span class="status-badge status-${escapeHtml(o.status)}">${escapeHtml(o.status)}</span>`;
+  document.getElementById('modal-items').innerHTML =
+    String(o.items || '').split(' | ').map(s => `• ${escapeHtml(s)}`).join('<br>');
+  document.getElementById('modal-total').textContent = '₹' + o.total;
+  document.getElementById('modal-overlay').classList.add('show');
+}
+function closeOrderModal(){
+  document.getElementById('modal-overlay').classList.remove('show');
+}
+
+/* ===================== MENU ON/OFF (cached on device) ===================== */
+const MENU_CACHE_KEY = 'moodwala-menu-status';
+function readMenuCache(){ try { return JSON.parse(localStorage.getItem(MENU_CACHE_KEY) || 'null'); } catch(e){ return null; } }
+function writeMenuCache(disabled){ try { localStorage.setItem(MENU_CACHE_KEY, JSON.stringify({ disabled, t: Date.now() })); } catch(e){} }
+
+function loadMenuTab(force){
+  const c = readMenuCache();
+  if (c) renderMenuTab(new Set(c.disabled));
+  if (!force && c && Date.now() - c.t < MENU_TTL_MS) return;
+  apiGet({ action: 'menuStatus' }).then(data => {
+    if (!Array.isArray(data.disabled)) throw new Error();
+    writeMenuCache(data.disabled);
+    renderMenuTab(new Set(data.disabled));
+  }).catch(() => { if (!c) showToast('Could not load menu status.'); });
+}
+
+function renderMenuTab(disabled){
+  const el = document.getElementById('menu-list');
+  el.innerHTML = MENU.map(cat => `
+    <div class="menu-cat">
+      <h3>${cat.cat}</h3>
+      ${cat.items.map(([name, price]) => {
+        const key = itemKey(cat.cat, name);
+        const isOff = disabled.has(key);
+        return `
+          <div class="menu-item-row ${isOff ? 'off' : ''}" id="row-${key}">
+            <div>
+              <div class="mi-name">${name}</div>
+              <div class="mi-price">₹${price}</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" ${isOff ? '' : 'checked'} onchange="toggleMenuItem('${key}', this)">
+              <span class="slider"></span>
+            </label>
+          </div>`;
+      }).join('')}
+    </div>
+  `).join('');
+}
+
+function toggleMenuItem(key, checkboxEl){
+  const enabled = checkboxEl.checked;
+  const row = document.getElementById('row-' + key);
+  row.classList.toggle('off', !enabled);
+  const revert = (msg) => {
+    showToast(msg);
+    checkboxEl.checked = !enabled;
+    row.classList.toggle('off', enabled);
+  };
+  apiGet({ action: 'updateMenuItem', key, enabled: String(enabled) }).then(res => {
+    if (res.result === 'success'){
+      if (Array.isArray(res.disabled)) writeMenuCache(res.disabled);
+      showToast(enabled ? 'Item turned ON' : 'Item turned OFF');
+    } else revert('Could not update item.');
+  }).catch(() => revert('Network error updating item.'));
+}
+
+/* ===================== BOOT ===================== */
+async function manualRefresh(){
+  if (currentTab === 'menu') return loadMenuTab(true);
+  await sync();
+  schedulePoll();
+}
+
+async function boot(){
+  if (booted) return;
+  booted = true;
+  document.getElementById('history-date').value = todayStr();
+
+  // 1) Paint instantly from what this device already has.
+  const saved = await idbLoad();
+  if (saved.meta){
+    S.meta = Object.assign(S.meta, saved.meta);
+    saved.orders.forEach(o => S.orders.set(o.id, o));
+  }
+  renderCurrent();
+  setStatusLine();
+
+  // 2) Fetch only what changed, then keep polling while on screen.
+  await sync();
+  schedulePoll();
+}
+
+(function initPin(){
+  let ok = false;
+  try { ok = localStorage.getItem('moodwala-admin-ok') === '1'; } catch(e){}
+  if (ok){
+    document.getElementById('pin-screen').style.display = 'none';
+    document.getElementById('app').classList.add('show');
+    if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', boot);
+    else boot();
+  }
+})();
+
+/* keep the tab bar docked right under the header whatever its height */
+function fitHeader(){
+  const h = document.querySelector('header');
+  if (h) document.documentElement.style.setProperty('--hdr-h', h.offsetHeight + 'px');
+}
+window.addEventListener('resize', fitHeader);
+window.addEventListener('load', fitHeader);
+fitHeader();
+
+/* ===================== PWA: service worker + install button ===================== */
+if ('serviceWorker' in navigator){
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
+let deferredInstall = null;
+const INSTALL_DISMISS_KEY = 'moodwala-install-dismissed-' + location.pathname.replace(/\W+/g, '');
+const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function installDismissedRecently(){
+  try { return Date.now() - Number(localStorage.getItem(INSTALL_DISMISS_KEY) || 0) < 3 * 86400e3; } catch(e){ return false; }
+}
+function showInstallFab(){
+  if (isStandalone() || installDismissedRecently()) return;
+  document.getElementById('install-fab').classList.add('show');
+}
+function hideInstallFab(){ document.getElementById('install-fab').classList.remove('show'); }
+function dismissInstall(){
+  hideInstallFab();
+  try { localStorage.setItem(INSTALL_DISMISS_KEY, String(Date.now())); } catch(e){}
+}
+async function installApp(){
+  if (deferredInstall){
+    deferredInstall.prompt();
+    const choice = await deferredInstall.userChoice;
+    deferredInstall = null;
+    if (choice.outcome === 'accepted') hideInstallFab();
+  } else if (isIOS){
+    document.getElementById('ios-help').classList.add('show');
+  }
+}
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; showInstallFab(); });
+window.addEventListener('appinstalled', () => { deferredInstall = null; hideInstallFab(); });
+if (isIOS) showInstallFab(); // iOS has no install prompt; the button shows instructions instead
+</script>
+</body>
+</html>
